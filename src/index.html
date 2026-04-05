@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electron Auto Update Sample</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    .version {
+      font-size: 48px;
+      font-weight: bold;
+      color: #e94560;
+      margin: 20px 0;
+    }
+    .status {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #aaa;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #16213e;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 16px 0;
+      display: none;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e94560, #0f3460);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+    .buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-check { background: #0f3460; color: #fff; }
+    .btn-download { background: #e94560; color: #fff; display: none; }
+    .btn-install { background: #00b894; color: #fff; display: none; }
+    .log {
+      margin-top: 24px;
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      color: #7f8c8d;
+    }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #161b22; }
+    .log-entry:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Electron Auto Update Sample</h1>
+    <div class="version" id="version">v-.-.-</div>
+    <div class="status" id="status">앱 시작 후 자동으로 업데이트를 확인합니다...</div>
+    <div class="progress-bar" id="progressBar">
+      <div class="fill" id="progressFill"></div>
+    </div>
+    <div class="buttons">
+      <button class="btn-check" id="btnCheck">업데이트 확인</button>
+      <button class="btn-download" id="btnDownload">다운로드</button>
+      <button class="btn-install" id="btnInstall">설치 및 재시작</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // 현재 버전 표시
+    window.electronAPI.getAppVersion().then((v) => {
+      $('version').textContent = `v${v}`;
+    });
+
+    // 로그 추가
+    function addLog(msg) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const time = new Date().toLocaleTimeString('ko-KR');
+      entry.textContent = `[${time}] ${msg}`;
+      $('log').prepend(entry);
+    }
+
+    // 상태 업데이트
+    window.electronAPI.onUpdateStatus((msg) => {
+      $('status').textContent = msg;
+      addLog(msg);
+    });
+
+    // 새 버전 발견
+    window.electronAPI.onUpdateAvailable((info) => {
+      $('btnDownload').style.display = 'inline-block';
+      $('btnCheck').disabled = true;
+      addLog(`새 버전 정보: v${info.version}`);
+    });
+
+    // 다운로드 진행률
+    window.electronAPI.onDownloadProgress((progress) => {
+      $('progressBar').style.display = 'block';
+      $('progressFill').style.width = `${progress.percent}%`;
+    });
+
+    // 다운로드 완료
+    window.electronAPI.onUpdateDownloaded((info) => {
+      $('btnDownload').style.display = 'none';
+      $('btnInstall').style.display = 'inline-block';
+      $('progressBar').style.display = 'none';
+    });
+
+    // 에러
+    window.electronAPI.onUpdateError((err) => {
+      addLog(`ERROR: ${err.message}`);
+      $('btnCheck').disabled = false;
+    });
+
+    // 버튼 핸들러
+    $('btnCheck').addEventListener('click', async () => {
+      $('btnCheck').disabled = true;
+      await window.electronAPI.checkForUpdates();
+      setTimeout(() => { $('btnCheck').disabled = false; }, 5000);
+    });
+
+    $('btnDownload').addEventListener('click', async () => {
+      $('btnDownload').disabled = true;
+      await window.electronAPI.downloadUpdate();
+    });
+
+    $('btnInstall').addEventListener('click', () => {
+      window.electronAPI.installUpdate();
+    });
+  </script>
+</body>
+</html>
