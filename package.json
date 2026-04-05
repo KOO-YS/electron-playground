@@ -1,6 +1,6 @@
 {
   "name": "electron-auto-update-sample",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Electron auto-update sample with GitHub Releases",
   "main": "src/main.js",
   "scripts": {
@@ -46,7 +46,7 @@
     "publish": {
       "provider": "github",
       "owner": "koo-ys",
-      "repo": "https://github.com/KOO-YS/electron-playground",
+      "repo": "electron-playground",
       "releaseType": "release"
     },
     "files": [
