@@ -27,6 +27,19 @@
       font-weight: bold;
       color: #e94560;
       margin: 20px 0;
+      transition: color 0.5s ease;
+    }
+    .new-version-badge {
+      display: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fdcb6e;
+      background: rgba(253, 203, 110, 0.15);
+      border: 1px solid #fdcb6e;
+      border-radius: 20px;
+      padding: 4px 12px;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
     }
     .status {
       background: #16213e;
@@ -39,6 +52,28 @@
       justify-content: center;
       font-size: 14px;
       color: #aaa;
+      border: 2px solid transparent;
+      transition: border-color 0.4s ease, background 0.4s ease, color 0.4s ease;
+    }
+    .status.available {
+      border-color: #fdcb6e;
+      background: rgba(253, 203, 110, 0.08);
+      color: #fdcb6e;
+    }
+    .status.downloading {
+      border-color: #74b9ff;
+      background: rgba(116, 185, 255, 0.08);
+      color: #74b9ff;
+    }
+    .status.ready {
+      border-color: #00b894;
+      background: rgba(0, 184, 148, 0.08);
+      color: #00b894;
+    }
+    .status.error {
+      border-color: #e94560;
+      background: rgba(233, 69, 96, 0.08);
+      color: #e94560;
     }
     .progress-bar {
       width: 100%;
@@ -51,7 +86,7 @@
     }
     .progress-bar .fill {
       height: 100%;
-      background: linear-gradient(90deg, #e94560, #0f3460);
+      background: linear-gradient(90deg, #74b9ff, #0984e3);
       width: 0%;
       transition: width 0.3s ease;
       border-radius: 4px;
@@ -63,13 +98,19 @@
       border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s, transform 0.1s;
     }
     button:hover { opacity: 0.85; }
+    button:active { transform: scale(0.97); }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-check { background: #0f3460; color: #fff; }
-    .btn-download { background: #e94560; color: #fff; display: none; }
-    .btn-install { background: #00b894; color: #fff; display: none; }
+    .btn-download { background: #fdcb6e; color: #1a1a2e; display: none; font-weight: 700; }
+    .btn-install { background: #00b894; color: #fff; display: none; font-weight: 700; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(253, 203, 110, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(253, 203, 110, 0); }
+    }
+    .btn-download { animation: pulse 1.8s infinite; }
     .log {
       margin-top: 24px;
       background: #0d1117;
@@ -89,6 +130,7 @@
 <body>
   <div class="container">
     <h1>Electron Auto Update Sample</h1>
+    <div class="new-version-badge" id="newVersionBadge"></div>
     <div class="version" id="version">v-.-.-</div>
     <div class="status" id="status">앱 시작 후 자동으로 업데이트를 확인합니다...</div>
     <div class="progress-bar" id="progressBar">
@@ -119,14 +161,24 @@
       $('log').prepend(entry);
     }
 
+    function setStatus(msg, state) {
+      const el = $('status');
+      el.textContent = msg;
+      el.className = 'status' + (state ? ` ${state}` : '');
+      addLog(msg);
+    }
+
     // 상태 업데이트
     window.electronAPI.onUpdateStatus((msg) => {
-      $('status').textContent = msg;
-      addLog(msg);
+      setStatus(msg);
     });
 
     // 새 버전 발견
     window.electronAPI.onUpdateAvailable((info) => {
+      setStatus(`새 버전 발견: v${info.version}`, 'available');
+      const badge = $('newVersionBadge');
+      badge.textContent = `↑ v${info.version} 업데이트 가능`;
+      badge.style.display = 'inline-block';
       $('btnDownload').style.display = 'inline-block';
       $('btnCheck').disabled = true;
       addLog(`새 버전 정보: v${info.version}`);
@@ -136,10 +188,12 @@
     window.electronAPI.onDownloadProgress((progress) => {
       $('progressBar').style.display = 'block';
       $('progressFill').style.width = `${progress.percent}%`;
+      setStatus(`다운로드 중... ${Math.round(progress.percent)}%`, 'downloading');
     });
 
     // 다운로드 완료
     window.electronAPI.onUpdateDownloaded((info) => {
+      setStatus('다운로드 완료 — 설치 후 재시작하면 업데이트됩니다', 'ready');
       $('btnDownload').style.display = 'none';
       $('btnInstall').style.display = 'inline-block';
       $('progressBar').style.display = 'none';
@@ -147,7 +201,7 @@
 
     // 에러
     window.electronAPI.onUpdateError((err) => {
-      addLog(`ERROR: ${err.message}`);
+      setStatus(`오류: ${err.message}`, 'error');
       $('btnCheck').disabled = false;
     });
 

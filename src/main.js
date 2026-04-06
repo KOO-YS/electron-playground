@@ -13,6 +13,9 @@ if (autoUpdater.logger) {
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
+// 코드 서명 검증 비활성화 (테스트용 — 프로덕션에서는 제거)
+autoUpdater.verifyUpdateCodeSignature = false;
+
 let mainWindow;
 
 function createWindow() {

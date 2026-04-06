@@ -41,6 +41,8 @@ brew install node
 }
 ```
 
+> **주의**: `repo`에는 저장소 이름만 입력합니다. 전체 URL(`https://github.com/...`)를 넣지 않습니다.
+
 ```bash
 npm install
 ```
@@ -61,23 +63,20 @@ npm run build:win
 
 ## 3. 첫 릴리스 (v1.0.0)
 
-### 방법 A: 릴리스 스크립트 사용 (권장)
+### 방법 A: 스크립트 사용 (빌드 / 업로드 분리)
 
 ```bash
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 git push -u origin main
 
-# Mac 빌드 + 릴리스 (기본값)
-./scripts/release.sh 1.0.0 mac
+# 1단계: 빌드만
+./scripts/build.sh 1.0.0 mac   # 또는 win / all
 
-# Windows 빌드 + 릴리스
-./scripts/release.sh 1.0.0 win
-
-# 둘 다
-./scripts/release.sh 1.0.0 all
+# 결과 확인 후 2단계: 커밋 + 태그 + GitHub Release 업로드
+./scripts/upload.sh 1.0.0 mac
 ```
 
-스크립트가 자동으로: 버전 업데이트 → 빌드 → Git 태그 → GitHub Release 업로드를 처리합니다.
+> 빌드와 업로드를 분리한 이유: 빌드 결과를 확인한 후 업로드 여부를 결정하기 위함입니다.
 
 ### 방법 B: 수동
 
@@ -105,8 +104,9 @@ gh release create v1.0.0 \
 ## 4. 업데이트 릴리스 (v1.1.0)
 
 ```bash
-# 코드 수정 후 릴리스 스크립트 실행
-./scripts/release.sh 1.1.0 mac
+# 코드 수정 후
+./scripts/build.sh 1.1.0 mac
+./scripts/upload.sh 1.1.0 mac
 ```
 
 또는 수동으로:
