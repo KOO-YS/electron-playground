@@ -1,6 +1,6 @@
 {
   "name": "electron-auto-update-sample",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Electron auto-update sample with GitHub Releases",
   "main": "src/main.js",
   "scripts": {
